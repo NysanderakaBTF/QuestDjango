@@ -108,7 +108,7 @@ class TestAPIView(views.APIView):
         return Response(TestSerializer(test).data)
 
     def delete(self, request, pk):
-        print(request)
+        # print(request)
         if not pk:
             return Response({"error": "DELETE is not allowed"})
 
@@ -121,7 +121,7 @@ class TestAPIView(views.APIView):
             test_obj.delete()
         except:
             return Response({"error": "Deletion error"})
-        return HttpResponseRedirect(reverse('my_tests_list'))
+        return Response(TestSerializer(Test.objects.filter(owner_id=request.user.id), many=True).data)
 
 
 class TestUpdateAPIView(views.APIView):
@@ -156,17 +156,35 @@ class MyTestListAPIView(ListAPIView):
         return Test.objects.filter(owner_id=self.request.user.id)
 
 
-
+#!!!!!!!!!!!!!!!!!!!!
 class QuestionAPIView(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
-    queryset = QuestionAnswer.objects.all()
+    queryset = Question.objects.all()
     permission_classes = (IsTestOwner,)
+
+    #TODO:короче, обновлять вопросы не через тест, а через апи ворпосов.!!!
 
     def retrieve(self, request, test_pk=None, pk=None ):
         if test_pk and pk:
             return Response({"question": QuestionSerializer(Question.objects.get(pk=pk)).data})
         if not pk:
             return Response({"question": QuestionSerializer(Question.objects.all()).data})
+    def destroy(self, request, test_pk, pk):
+        if not pk:
+            return Response({"error": "DELETE is not allowed"})
+
+        try:
+            quest = Question.objects.get(pk=pk)
+        except:
+            return Response({"error": "404 question not found"}, status=404)
+
+        try:
+            quest.delete()
+        except:
+            return Response({"error": "Deletion error"})
+        return Response(QuestionSerializer(Question.objects.filter(test_id=test_pk), many=True).data)
+
+
 
 
 class QuestionAnswerAPIView(viewsets.ModelViewSet):
@@ -197,6 +215,22 @@ class CategoryApiView(views.APIView):
         upd_cat.is_valid(raise_exception=True)
         upd_cat.save()
         return Response(CategoryANDTestSerializer(instance=upd_cat).data)
+
+    def delete(self, request, pk):
+        if not pk:
+            return Response({"error": "DELETE is not allowed"})
+
+        try:
+            cat = Category.objects.get(pk=pk)
+        except:
+            return Response({"error": "404 Caegory not found"}, status=404)
+
+        try:
+            cat.delete()
+        except:
+            return Response({"error": "Deletion error"})
+        return Response(CategorySerializer(Category.objects.all(), many=True).data)
+
 
 
 class CategoryListAPIView(ListAPIView):
