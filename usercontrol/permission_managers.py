@@ -21,6 +21,7 @@ class UserPermissionManager(permissions.BasePermission):
             return (not request.user.is_authenticated) or request.user.is_staff
         if request.method in ['DELETE', 'PUT', 'PATCH']:
             return request.user.is_authenticated
+        return False
 
     def has_object_permission(self, request, view, obj):
         print(request)

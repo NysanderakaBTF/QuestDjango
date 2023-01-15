@@ -1,27 +1,34 @@
+import rest_framework.exceptions
 from django.contrib.auth.models import PermissionsMixin
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from rest_framework import viewsets, views, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.generics import mixins, GenericAPIView
+from rest_framework.reverse import reverse
 
 from testcreater.permission_checker import TestPermissionsChecker
 from testcreater.serializers import *
 from usercontrol.TestingGroupModel import TestingGroup
+from usercontrol.permission_managers import GroupPermissionManager
 
 
 class IsTestOwner(permissions.BasePermission):
-    def has_permission(self, request, view, obj):
-        print(request, view, obj)
-        return request.user == obj.owner
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user.is_authenticated
+
 
 
 class TestListAPIView(views.APIView):
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         if request.user.id:
             available_tests = Test.objects.filter(
-                Q(is_public=True) | Q(in_groups__group_members__in=[request.user.id])).values_list('id', 'title', 'owner')
+                Q(is_public=True) | Q(in_groups__group_members__in=[request.user.id])).values_list('id', 'title',
+                                                                                                   'owner')
         else:
             available_tests = Test.objects.filter(Q(is_public=True)).values_list('id', 'title', 'owner')
         # available_tests1 = available_tests | [i.group_tests.all().values_list('id', 'title', 'owner') for
@@ -33,20 +40,25 @@ class TestListAPIView(views.APIView):
 class TestAPIView(views.APIView):
     permission_classes = (TestPermissionsChecker,)
 
-    def get(self, request, pk=None):
+    def get(self, request,pk=None):
+        #в сериализаторе нет in groups
         if not pk:
-            test = Test.objects.all().only('title', 'info', 'is_public', 'categories', 'owner')
-            # add values_list('id', 'title', 'owner') for prod or mongo
-            return Response(TestSerializer(instance=test).data)
+            test = Test.objects.filter(Q(is_public=True) | Q(in_groups__group_members__in=[request.user.id]) | Q(owner_id=request.user.id)).only('title', 'info', 'is_public', 'categories', 'owner').distinct()
+            return Response(TestListSerializer(instance=test, many=True).data)
         test = get_object_or_404(Test, pk=pk)
         return Response(TestSerializer(instance=test).data)
 
     def post(self, request):
 
-
-        #TODO: избавиться от создания объекта сразу, сделать сначала объект или словарь, а затем его сериалираьтором
-        #создать
+        # TODO: избавиться от создания объекта сразу, сделать сначала объект или словарь, а затем его сериалираьтором
+        # создать
+        #поебать, переадресацию на фронте сделать, с сообщением об ошибке, переадресация на Retrive (get + pk)
         print(request.data)
+
+
+      #  if any(((request.user.is_staff is False) or request.user.id != group.group_owner.pk) for group in request.data['in_groups']):
+
+
 
         test = Test.objects.create(title=request.data['title'],
                                    is_public=request.data['is_public'],
@@ -58,80 +70,99 @@ class TestAPIView(views.APIView):
                 cat = Category.objects.get(title__iexact=i['title'])
             except:
                 cat = Category.objects.create(title=i['title'])
-               # cat.category_tests.add(test)
+            # cat.category_tests.add(test)
             test.categories.add(cat)
-           # cat.save()
+        # cat.save()
         if 'questions' in request.data.keys():
             for i in request.data['questions']:
                 if not 'answers' in i.keys():
                     raise ValidationError(f"Question {i['text_ques']} must contain at least 1 answer")
-                question = Question.objects.create(text_ques=i['text_ques'],
-                                                   img_ques=i['img_ques'],
-                                                   test_id=test.pk)
-                for j in i['answers']:
-                    new_data = j
-                    new_data.setdefault('question', question.pk)
-                    ans = QuestionAnswerSerializer(data=new_data)
-                    # ans.fields['question'] = question.pk
-                    ans.is_valid(raise_exception=True)
-                    ans.save()
+                # question = Question.objects.create(text_ques=i['text_ques'],
+                #                                    img_ques=i['img_ques'],
+                #                                    test_id=test.pk)
+                # for j in i['answers']:
+                #     new_data = j
+                #     new_data.setdefault('question', question.pk)
+                #     ans = QuestionAnswerSerializer(data=new_data)
+                #     # ans.fields['question'] = question.pk
+                #     ans.is_valid(raise_exception=True)
+                #     ans.save()
+                i.setdefault('test',test.pk)
+                new_ques = CreateQuestionSerializer(data=i)
+                new_ques.is_valid(raise_exception=True)
+                new_ques.save()
+
         else:
             raise ValidationError("You must provide at least 1 question for test")
         if 'in_groups' in request.data.keys():
             for i in request.data['in_groups']:
                 print(i)
-                group = TestingGroup.objects.get(pk=i)
-                if request.user.is_staff == False or request.user.id != group.group_owner.pk:
-                    raise ValidationError(f"You can't add a test to {group.name}, because you're not an owner")
+                group = get_object_or_404(TestingGroup, pk=i)
+                if not (request.user.is_staff or request.user.id == group.group_owner.pk):
+                    raise rest_framework.exceptions.PermissionDenied({"detail":f"You can't add a test to {group.name}, because you're not an owner", 'test':TestSerializer(instance=test).data})
                 else:
                     group.group_tests.add(test)
                     group.save()
         test.save()
+        # make redirect in front-end. After error - use Put method
         return Response(TestSerializer(test).data)
 
-    def put(self, request, *args, **kwargs):
-        pk = kwargs.get('pk', None)
+    def delete(self, request, pk):
+        print(request)
         if not pk:
-            return Response({"error": "PUT is not allowe"})
+            return Response({"error": "DELETE is not allowed"})
 
         try:
             test_obj = Test.objects.get(pk=pk)
         except:
-            return Response({"error": "404 Test not found"})
-
-        serialized_test = TestSerializer(data=request.data, instance=test_obj)
-        serialized_test.is_valid(raise_exception=True)
-        serialized_test.save()
-        return Response({"test": serialized_test.data})
-
-    def delete(self, request, *args, **kwargs):
-        pk = kwargs.get('pk', None)
-        if not pk:
-            return Response({"error": "PUT is not allowe"})
-
-        try:
-            test_obj = Test.objects.get(pk=pk)
-        except:
-            return Response({"error": "404 Test not found"})
+            return Response({"error": "404 Test not found"}, status=404)
 
         try:
             test_obj.delete()
         except:
             return Response({"error": "Deletion error"})
+        return HttpResponseRedirect(reverse('my_tests_list'))
 
 
-class QuestionAPIView(mixins.RetrieveModelMixin,
-                      mixins.UpdateModelMixin,
-                      mixins.DestroyModelMixin,
-                      mixins.CreateModelMixin,
-                      GenericAPIView
-                      ):
+class TestUpdateAPIView(views.APIView):
+    permission_classes = (GroupPermissionManager,TestPermissionsChecker)
+
+    def patch(self, request, pk):
+        if not pk:
+            return Response({"error": "PATCH is not allowed"}, status=400)
+        test_obj = get_object_or_404(Test, pk=pk)
+        if 'in_groups' in request.data.keys():
+            test_obj.in_groups.clear()
+            for i in request.data['in_groups']:
+                group = get_object_or_404(TestingGroup, pk=i)
+                self.check_object_permissions(request, group)
+                test_obj.in_groups.add(group)
+
+        serialized_test = TestUpdateSerializer(data=request.data, instance=test_obj, partial=True)
+        serialized_test.is_valid(raise_exception=True)
+        test_obj.save()
+        # serialized_test = TestSerializer(data=request.data, instance=test_obj, partial=True)
+        #
+        # serialized_test.is_valid(raise_exception=True)
+        serialized_test.save()
+        return Response({"test": serialized_test.data})
+
+
+class MyTestListAPIView(ListAPIView):
+    serializer_class = TestSerializer
+    permission_classes = (TestPermissionsChecker,)
+
+    def get_queryset(self):
+        return Test.objects.filter(owner_id=self.request.user.id)
+
+
+
+class QuestionAPIView(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
+    queryset = QuestionAnswer.objects.all()
+    permission_classes = (IsTestOwner,)
 
-    def retrieve(self, request, *args, **kwargs):
-        pk = kwargs.get('quest_pk', None)
-        test_pk = kwargs.get('test_pk', None)
-
+    def retrieve(self, request, test_pk=None, pk=None ):
         if test_pk and pk:
             return Response({"question": QuestionSerializer(Question.objects.get(pk=pk)).data})
         if not pk:

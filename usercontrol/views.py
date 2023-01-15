@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.shortcuts import render
 from requests import request
 from rest_framework import permissions
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import *
 from rest_framework.response import Response
 
@@ -16,11 +17,12 @@ class UserListAPIView(ListAPIView):
     queryset = TestSubject.objects.all()
     serializer_class = TestSubjectSerializer
 
+
 class CreateUserAPIView(CreateAPIView):
     serializer_class = TestSubjectSerializer
     queryset = TestSubject.objects.all()
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         if 'is_superuser' in request.data.keys():
             if request.data['is_superuser']:
                 raise ValidationError("Can't create superuser")
@@ -29,13 +31,13 @@ class CreateUserAPIView(CreateAPIView):
                 raise ValidationError("Can't create moderator")
         request.data['is_active'] = 'True'
 
-        return self.create(request, *args, **kwargs)
+        return self.create(request)
 
 
 class UpdateUserAPIView(UpdateAPIView):
     queryset = TestSubject.objects.all()
     serializer_class = TestSubjectSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, UserPermissionManager)
 
 
 class RetriveUserAPIView(RetrieveAPIView):
@@ -62,7 +64,7 @@ class DeleteUserAPIView(DestroyAPIView):
 class CreateGroupAPIView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         data = request.data
 
         data.setdefault('group_owner', request.user.id)
@@ -80,13 +82,13 @@ class UpdateDeleteGroupAPIView(DestroyAPIView, UpdateAPIView):
     serializer_class = TestingGroupSerializer
     permission_classes = (GroupPermissionManager,)
 
-    def patch(self, request, *args, **kwargs):
-        upd_instance = get_object_or_404(TestingGroup,pk=kwargs['pk'])
+    def patch(self, request, pk):
+        upd_instance = get_object_or_404(TestingGroup, pk=pk)
         if 'group_tests' in request.data.keys():
             for i in request.data['group_tests']:
                 test = get_object_or_404(Test, pk=i)
-                if not(test.is_public or test.owner == request.user.id or request.user.is_staff) :
-                    raise ValidationError(f"Can't get access to '{test.title}' test")
+                if not (test.is_public or test.owner == request.user.id or request.user.is_staff):
+                    raise PermissionDenied(f"Can't get access to '{test.title}' test")
 
         serializer = TestingGroupSerializer(instance=upd_instance, data=request.data, partial=True)
         if serializer.is_valid(raise_exception=True):
@@ -96,7 +98,7 @@ class UpdateDeleteGroupAPIView(DestroyAPIView, UpdateAPIView):
 
 class ListGroupAPIView(ListAPIView):
     serializer_class = TestingGroupSerializer
-
+    permission_classes = (GroupPermissionManager,)
     def get_queryset(self):
         return TestingGroup.objects.filter(Q(is_public=True) | Q(group_members__in=[self.request.user.id]))
 
