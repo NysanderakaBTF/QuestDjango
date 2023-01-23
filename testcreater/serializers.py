@@ -14,6 +14,12 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class AnswerVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionAnswer
+        fields = ('text_ans', 'img_ans', 'question', 'id')
+
+
 class QuestionSerializer(serializers.ModelSerializer):
     answers = QuestionAnswerSerializer(QuestionAnswer.objects.all(), many=True)
 
@@ -21,20 +27,26 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = '__all__'
 
+
 class CreateQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ('text_ques','img_ques','is_sel_quest','test')
+        fields = ('text_ques', 'img_ques', 'is_sel_quest', 'test', 'score', 'position_in_test', 'answer_var_n')
 
     def create(self, validated_data):
-
         self.is_valid(raise_exception=True)
+        if 'img_ques' not in validated_data.keys():
+            validated_data.setdefault('img_ques', None)
         # print(self.validated_data)
         if not 'answers' in self.initial_data.keys():
             raise ValidationError(f"Question {validated_data['text_ques']} must contain at least 1 answer")
         question = Question.objects.create(text_ques=validated_data['text_ques'],
                                            img_ques=validated_data['img_ques'],
-                                           test_id=self.initial_data['test'])
+                                           test_id=self.initial_data['test'],
+                                           answer_var_n=validated_data['answer_var_n'],
+                                           position_in_test=validated_data['position_in_test'],
+                                           score=validated_data['score'],
+                                           is_sel_quest=validated_data['is_sel_quest'])
         for j in self.initial_data['answers']:
             new_data = j
             new_data.setdefault('question', question.pk)
@@ -65,33 +77,35 @@ class TestSerializer(serializers.ModelSerializer):
 class TestUpdateSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(Category.objects.all(), many=True)
     questions = CreateQuestionSerializer(Question.objects.all(), many=True)
-    default_validators = ()
+
     class Meta:
         model = Test
-        fields = ('id', 'categories','title', 'info','is_public', 'owner', 'questions' )
+        fields = ('id', 'categories', 'title', 'info', 'is_public', 'owner', 'n_quest', 'is_positional')
 
-    def update(self, instance:Test, validated_data):
-        self.is_valid(raise_exception=True)
+    # def update(self, instance: Test, validated_data):
+    #     self.is_valid(raise_exception=True)
+    #
+    #     for key, val in validated_data.items():
+    #         if key == 'questions':
+    #             # print(instance.questions.all().values())
+    #             for i in self.initial_data['questions']:
+    #                 i.setdefault('test', instance.pk)
+    #                 # print(i)
+    #
+    #                 try:
+    #                     question_ = instance.questions.get(text_ques__iexact=i['text_ques'])
+    #                     print(question_, '1!!!!!')
+    #                     question_ser = QuestionSerializer(instance=question_, data=i, partial=True)
+    #                     question_ser.is_valid(raise_exception=True)
+    #                     question_ser.update()
+    #                 except:
+    #                     new_ques = CreateQuestionSerializer(data=i)
+    #                     new_ques.is_valid(raise_exception=True)
+    #                     new_ques.save()
+    #
+    #
+    #     return instance
 
-        for key, val in validated_data.items():
-            if key=='questions':
-                # print(instance.questions.all().values())
-                for i in self.initial_data['questions']:
-                    i.setdefault('test', instance.pk)
-                    # print(i)
-
-                    try:
-                        question_ = instance.questions.get(text_ques__iexact=i['text_ques'])
-                        print(question_, '1!!!!!')
-                        question_ser = QuestionSerializer(instance=question_,data=i, partial=True)
-                        question_ser.is_valid(raise_exception=True)
-                        question_ser.update()
-                    except:
-                        new_ques = CreateQuestionSerializer(data=i)
-                        new_ques.is_valid(raise_exception=True)
-                        new_ques.save()
-
-        return instance
 
 class TestListSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(Category.objects.all(), many=True)
@@ -108,6 +122,3 @@ class CategoryANDTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
-
-
-

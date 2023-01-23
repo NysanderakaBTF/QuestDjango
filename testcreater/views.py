@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect
 from rest_framework import viewsets, views, permissions
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404, ListAPIView
+from rest_framework.generics import get_object_or_404, ListAPIView, CreateAPIView
 from rest_framework.response import Response
 from rest_framework.generics import mixins, GenericAPIView
 from rest_framework.reverse import reverse
@@ -20,7 +20,6 @@ class IsTestOwner(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return request.user.is_authenticated
-
 
 
 class TestListAPIView(views.APIView):
@@ -40,10 +39,11 @@ class TestListAPIView(views.APIView):
 class TestAPIView(views.APIView):
     permission_classes = (TestPermissionsChecker,)
 
-    def get(self, request,pk=None):
-        #в сериализаторе нет in groups
+    def get(self, request, pk=None):
+        # в сериализаторе нет in groups
         if not pk:
-            test = Test.objects.filter(Q(is_public=True) | Q(in_groups__group_members__in=[request.user.id]) | Q(owner_id=request.user.id)).only('title', 'info', 'is_public', 'categories', 'owner').distinct()
+            test = Test.objects.filter(Q(is_public=True) | Q(in_groups__group_members__in=[request.user.id]) | Q(
+                owner_id=request.user.id)).only('title', 'info', 'is_public', 'categories', 'owner').distinct()
             return Response(TestListSerializer(instance=test, many=True).data)
         test = get_object_or_404(Test, pk=pk)
         return Response(TestSerializer(instance=test).data)
@@ -52,26 +52,24 @@ class TestAPIView(views.APIView):
 
         # TODO: избавиться от создания объекта сразу, сделать сначала объект или словарь, а затем его сериалираьтором
         # создать
-        #поебать, переадресацию на фронте сделать, с сообщением об ошибке, переадресация на Retrive (get + pk)
+        # поебать, переадресацию на фронте сделать, с сообщением об ошибке, переадресация на Retrive (get + pk)
         print(request.data)
 
-
-      #  if any(((request.user.is_staff is False) or request.user.id != group.group_owner.pk) for group in request.data['in_groups']):
-
-
+        #  if any(((request.user.is_staff is False) or request.user.id != group.group_owner.pk) for group in request.data['in_groups']):
 
         test = Test.objects.create(title=request.data['title'],
                                    is_public=request.data['is_public'],
                                    info=request.data['info'],
                                    owner_id=request.user.id,
                                    )
-        for i in request.data['categories']:
-            try:
-                cat = Category.objects.get(title__iexact=i['title'])
-            except:
-                cat = Category.objects.create(title=i['title'])
-            # cat.category_tests.add(test)
-            test.categories.add(cat)
+        if 'categories' in request.data.keys():
+            for i in request.data['categories']:
+                try:
+                    cat = Category.objects.get(title__iexact=i['title'])
+                except:
+                    cat = Category.objects.create(title=i['title'])
+                # cat.category_tests.add(test)
+                test.categories.add(cat)
         # cat.save()
         if 'questions' in request.data.keys():
             for i in request.data['questions']:
@@ -87,19 +85,18 @@ class TestAPIView(views.APIView):
                 #     # ans.fields['question'] = question.pk
                 #     ans.is_valid(raise_exception=True)
                 #     ans.save()
-                i.setdefault('test',test.pk)
+                i.setdefault('test', test.pk)
                 new_ques = CreateQuestionSerializer(data=i)
                 new_ques.is_valid(raise_exception=True)
                 new_ques.save()
-
-        else:
-            raise ValidationError("You must provide at least 1 question for test")
         if 'in_groups' in request.data.keys():
             for i in request.data['in_groups']:
                 print(i)
                 group = get_object_or_404(TestingGroup, pk=i)
                 if not (request.user.is_staff or request.user.id == group.group_owner.pk):
-                    raise rest_framework.exceptions.PermissionDenied({"detail":f"You can't add a test to {group.name}, because you're not an owner", 'test':TestSerializer(instance=test).data})
+                    raise rest_framework.exceptions.PermissionDenied(
+                        {"detail": f"You can't add a test to {group.name}, because you're not an owner",
+                         'test': TestSerializer(instance=test).data})
                 else:
                     group.group_tests.add(test)
                     group.save()
@@ -125,7 +122,7 @@ class TestAPIView(views.APIView):
 
 
 class TestUpdateAPIView(views.APIView):
-    permission_classes = (GroupPermissionManager,TestPermissionsChecker)
+    permission_classes = (GroupPermissionManager, TestPermissionsChecker)
 
     def patch(self, request, pk):
         if not pk:
@@ -156,19 +153,38 @@ class MyTestListAPIView(ListAPIView):
         return Test.objects.filter(owner_id=self.request.user.id)
 
 
-#!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!
+
+
+
+
+class CreateQuestionAPIView(CreateAPIView):
+    serializer_class = CreateQuestionSerializer
+    queryset = Question.objects.all()
+    permission_classes = (TestPermissionsChecker, GroupPermissionManager)
+    
+    def create(self, request, pk):
+        data = request.data
+        data.setdefault('test', pk)
+        serializer = CreateQuestionSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
 class QuestionAPIView(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
     queryset = Question.objects.all()
     permission_classes = (IsTestOwner,)
 
-    #TODO:короче, обновлять вопросы не через тест, а через апи ворпосов.!!!
+    # TODO:короче, обновлять вопросы не через тест, а через апи ворпосов.!!!
 
-    def retrieve(self, request, test_pk=None, pk=None ):
+    def retrieve(self, request, test_pk=None, pk=None):
         if test_pk and pk:
             return Response({"question": QuestionSerializer(Question.objects.get(pk=pk)).data})
         if not pk:
             return Response({"question": QuestionSerializer(Question.objects.all()).data})
+
     def destroy(self, request, test_pk, pk):
         if not pk:
             return Response({"error": "DELETE is not allowed"})
@@ -185,12 +201,18 @@ class QuestionAPIView(viewsets.ModelViewSet):
         return Response(QuestionSerializer(Question.objects.filter(test_id=test_pk), many=True).data)
 
 
-
-
 class QuestionAnswerAPIView(viewsets.ModelViewSet):
     serializer_class = QuestionAnswerSerializer
     queryset = QuestionAnswer.objects.all()
     permission_classes = (IsTestOwner,)
+
+    def create(self, request, test_pk, quest_pk):
+        data = request.data
+        data.setdefault('question', quest_pk)
+        serializer = QuestionAnswerSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(QuestionSerializer(Question.objects.get(id=quest_pk)).data)
 
 
 class CategoryApiView(views.APIView):
@@ -230,7 +252,6 @@ class CategoryApiView(views.APIView):
         except:
             return Response({"error": "Deletion error"})
         return Response(CategorySerializer(Category.objects.all(), many=True).data)
-
 
 
 class CategoryListAPIView(ListAPIView):

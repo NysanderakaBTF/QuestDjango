@@ -38,11 +38,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-    'testcreater',
     'djoser',
     'rest_auth.registration',
+    'rest_framework_simplejwt',
+
+    'testcreater',
     'usercontrol',
-    'rest_framework_simplejwt'
+    'testgen'
 ]
 
 MIDDLEWARE = [
@@ -78,6 +80,8 @@ WSGI_APPLICATION = 'quest.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+DATABASE_ROUTERS = ['quest.database_router.TestDBRouter', 'quest.database_router.GeneratorTestRouter']
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -86,6 +90,10 @@ DATABASES = {
         'PASSWORD': '123',
         'HOST': 'localhost',
         'PORT': '',
+    },
+    'gen_tests_mongo': {
+        'ENGINE': 'djongo',
+        'NAME': 'users_tests'
     }
 }
 
@@ -134,13 +142,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "usercontrol.TestSubject"
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES':[
+    'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_PARSER_CLASSES':[
+    'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES':[
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.BasicAuthentication',

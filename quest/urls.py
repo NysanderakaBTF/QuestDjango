@@ -30,6 +30,7 @@ urlpatterns = [
     path('', include('testcreater.urls')),
     path('users/', include('usercontrol.urls')),
     path('tests/', include('testcreater.urls')),
+    path('generate/', include('testgen.urls'))
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

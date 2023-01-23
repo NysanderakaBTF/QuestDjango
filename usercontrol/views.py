@@ -68,7 +68,10 @@ class CreateGroupAPIView(views.APIView):
         data = request.data
 
         data.setdefault('group_owner', request.user.id)
-        data['group_members'].append(request.user.id)
+        if('group_members' in data.keys()):
+            data['group_members'].append(request.user.id)
+        else:
+            data.setdefault('group_members', [request.user.id])
         # creatable_gr = TestingGroup(*data)
 
         new_goup = TestingGroupSerializer(data=data)
