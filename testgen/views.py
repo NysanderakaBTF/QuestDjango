@@ -9,7 +9,8 @@ from rest_framework.exceptions import NotAcceptable
 
 from testcreater.models import Test
 from testcreater.serializers import AnswerVariantSerializer, TestSerializer
-from testgen.serializers import TestsListSerializer, GeneratedTestserialize
+from testgen.serializers import TestsListSerializer, GeneratedTestserialize, GeneratedQuestionSerializer, \
+    GeneratedQuestionSerializerNonAbstract
 from rest_framework.permissions import IsAuthenticated
 
 from .generator_permissions import ViewSolveTestPermisson
@@ -34,11 +35,12 @@ class GenTestAPIView(APIView):
             test_id=test_base.pk,
             user_id=request.user.id,
         )
+        all_q = []
         for i in range(0, test_base.n_quest):
             if not test_base.is_positional:
-                pos = random.randint(0, len(test_q))
+                pos = random.randint(0, len(test_q) - 1)
                 selected_q = test_q[pos]
-                temp = GeneratedQuestion(
+                temp = GeneratedQuestionNonAbstract(
                     question_id=selected_q.pk
                 )
                 # g_test.questions.base_type.append(GeneratedQuestion(
@@ -47,11 +49,11 @@ class GenTestAPIView(APIView):
                 test_q.remove(selected_q)
             else:
                 q_var = [ques for ques in test_q if ques.position_in_test == i]
-                selected_q = q_var[random.randint(0, len(q_var))]
+                selected_q = q_var[random.randint(0, len(q_var) - 1)]
                 # g_test.questions.base_type.append(GeneratedQuestion(
                 #     question_id=selected_q.pk
                 # ))
-                temp = GeneratedQuestion(
+                temp = GeneratedQuestionNonAbstract(
                     question_id=selected_q.pk
                 )
                 test_q.remove(selected_q)
@@ -66,10 +68,15 @@ class GenTestAPIView(APIView):
                     break
 
             for j in range(1, selected_q.answer_var_n):
-                f = cur_ans[random.randint(0, len(cur_ans))]
+                f = cur_ans[random.randint(0, len(cur_ans) - 1)]
                 temp.answers.append(AnswerVariantSerializer(instance=f).data)
                 cur_ans.remove(f)
-            g_test.questions.base_type.append(temp)
+            item = GeneratedQuestionSerializerNonAbstract(instance=temp).data
+            item.pop('id')
+            all_q.append(item)
+
+        print(list(all_q))
+        g_test.questions = list(all_q)
         g_test.start_time = datetime.now()
         g_test.end_time = datetime.now() + test_base.duration
         g_test.save()
@@ -78,3 +85,4 @@ class GenTestAPIView(APIView):
     def patch(self, request, test_pk, res_id):
         upd_res = GeneratedTest.objects.get(_id=res_id)
         print(request.data, GeneratedTestserialize(instance=upd_res).data)
+
