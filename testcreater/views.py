@@ -61,6 +61,9 @@ class TestAPIView(views.APIView):
                                    is_public=request.data['is_public'],
                                    info=request.data['info'],
                                    owner_id=request.user.id,
+                                   duration=request.data['duration'],
+                                   is_positional=request.data['is_positional'],
+                                   n_quest=request.data['n_quest']
                                    )
         if 'categories' in request.data.keys():
             for i in request.data['categories']:
@@ -75,16 +78,6 @@ class TestAPIView(views.APIView):
             for i in request.data['questions']:
                 if not 'answers' in i.keys():
                     raise ValidationError(f"Question {i['text_ques']} must contain at least 1 answer")
-                # question = Question.objects.create(text_ques=i['text_ques'],
-                #                                    img_ques=i['img_ques'],
-                #                                    test_id=test.pk)
-                # for j in i['answers']:
-                #     new_data = j
-                #     new_data.setdefault('question', question.pk)
-                #     ans = QuestionAnswerSerializer(data=new_data)
-                #     # ans.fields['question'] = question.pk
-                #     ans.is_valid(raise_exception=True)
-                #     ans.save()
                 i.setdefault('test', test.pk)
                 new_ques = CreateQuestionSerializer(data=i)
                 new_ques.is_valid(raise_exception=True)

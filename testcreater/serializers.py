@@ -40,13 +40,9 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
         # print(self.validated_data)
         if not 'answers' in self.initial_data.keys():
             raise ValidationError(f"Question {validated_data['text_ques']} must contain at least 1 answer")
-        question = Question.objects.create(text_ques=validated_data['text_ques'],
-                                           img_ques=validated_data['img_ques'],
-                                           test_id=self.initial_data['test'],
-                                           answer_var_n=validated_data['answer_var_n'],
-                                           position_in_test=validated_data['position_in_test'],
-                                           score=validated_data['score'],
-                                           is_sel_quest=validated_data['is_sel_quest'])
+        data = validated_data
+        data.setdefault('test_id', self.initial_data['test'])
+        question = Question.objects.create(**data)
         for j in self.initial_data['answers']:
             new_data = j
             new_data.setdefault('question', question.pk)
