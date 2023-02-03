@@ -149,13 +149,11 @@ class MyTestListAPIView(ListAPIView):
 # !!!!!!!!!!!!!!!!!!!!
 
 
-
-
 class CreateQuestionAPIView(CreateAPIView):
     serializer_class = CreateQuestionSerializer
     queryset = Question.objects.all()
     permission_classes = (TestPermissionsChecker, GroupPermissionManager)
-    
+
     def create(self, request, pk):
         data = request.data
         data.setdefault('test', pk)

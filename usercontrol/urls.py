@@ -1,10 +1,9 @@
-
 from django.urls import path, include
 from usercontrol.views import *
 
 urlpatterns = [
-    path('',UserListAPIView.as_view()),
-    path('create/',CreateUserAPIView.as_view()),
+    path('', UserListAPIView.as_view()),
+    path('create/', CreateUserAPIView.as_view()),
     path('<int:pk>/update/', UpdateUserAPIView.as_view()),
     path('<int:pk>/', RetriveUserAPIView.as_view()),
     path('<int:pk>/delete/', DeleteUserAPIView.as_view()),
