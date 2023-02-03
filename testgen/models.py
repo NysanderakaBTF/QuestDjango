@@ -5,7 +5,7 @@ from djongo import models
 class GeneratedQuestion(models.Model):
     user_score = models.IntegerField(blank=True)
     question_id = models.IntegerField()
-    answers = models.JSONField(default=list())
+    answers = models.JSONField(blank=True)
     given_answer = models.JSONField(blank=True)
 
     class Meta:
