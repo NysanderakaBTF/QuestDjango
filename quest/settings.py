@@ -20,12 +20,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--n#l$w*b5i$u1wn)#30c3i%mp#ei8#gi#4(tf$lcsfpufu*jvm'
+SECRET_KEY = os.getenv("SECRET_KEY", "fgsweFEfwFE2343e3@##41")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -85,15 +85,11 @@ DATABASE_ROUTERS = ['quest.database_router.TestDBRouter', 'quest.database_router
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'quest_tests',
-        'USER': 'Fox',
-        'PASSWORD': '123',
-        'HOST': 'localhost',
-        'PORT': '',
-    },
-    'gen_tests_mongo': {
-        'ENGINE': 'djongo',
-        'NAME': 'users_tests'
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
