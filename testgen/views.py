@@ -13,7 +13,7 @@ from testgen.serializers import TestsListSerializer, GeneratedTestserialize, Gen
     GeneratedQuestionSerializerNonAbstract
 from rest_framework.permissions import IsAuthenticated
 
-from .generator_permissions import ViewSolveTestPermisson
+from .permissions import ViewSolveTestPermisson
 from .models import *
 
 
@@ -82,7 +82,7 @@ class GenTestAPIView(APIView):
         g_test.save()
         return Response(GeneratedTestserialize(instance=g_test).data)
 
-    def patch(self, request, test_pk, res_id):
+    def put(self, request, test_pk, res_id):
         upd_res = GeneratedTest.objects.get(_id=res_id)
         print(request.data, GeneratedTestserialize(instance=upd_res).data)
 

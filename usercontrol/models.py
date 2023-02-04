@@ -1,5 +1,5 @@
 from django.contrib.auth.base_user import *
-from django.contrib.auth.models import PermissionsMixin, User, AbstractUser
+from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 
 

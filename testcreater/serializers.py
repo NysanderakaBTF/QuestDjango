@@ -4,9 +4,11 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import BaseSerializer
 
 from testcreater.models import *
-from usercontrol.serializers import TestingGroupSerializer
-from usercontrol.TestingGroupModel import TestingGroup
 
+class TestingGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestingGroup
+        fields = ('id', 'name', 'description', 'group_owner', 'group_members', 'group_tests', 'is_public')
 
 class QuestionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,26 +39,36 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
         self.is_valid(raise_exception=True)
         if 'img_ques' not in validated_data.keys():
             validated_data.setdefault('img_ques', None)
-        # print(self.validated_data)
+
         if not 'answers' in self.initial_data.keys():
             raise ValidationError(f"Question {validated_data['text_ques']} must contain at least 1 answer")
+
         data = validated_data
         data.setdefault('test_id', self.initial_data['test'])
+
         question = Question.objects.create(**data)
+        answers = []
         for j in self.initial_data['answers']:
             new_data = j
             new_data.setdefault('question', question.pk)
-            ans = QuestionAnswerSerializer(data=new_data)
-            # ans.fields['question'] = question.pk
-            ans.is_valid(raise_exception=True)
-            ans.save()
+            answers.append(QuestionAnswer(**new_data))
+            # ans = QuestionAnswerSerializer(data=new_data)
+            # ans.is_valid(raise_exception=True)
+            # answers.append(ans)
+
+        # answers_serializer = QuestionAnswerSerializer(data=answers, many=True)
+        # answers_serializer.is_valid(raise_exception=True)
+        # answers_serializer.save()
+        QuestionAnswer.objects.bulk_create(answers)
+        # QuestionAnswer.objects.bulk_create(answers)
+
         return question
 
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('id', 'title')
 
 
 # TODO:change to serializer for list
@@ -117,4 +129,7 @@ class CategoryANDTestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('id', 'title', 'tests')
+
+
+

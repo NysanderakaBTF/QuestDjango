@@ -1,8 +1,8 @@
 from rest_framework import permissions
 
+
 class TestPermissionsChecker(permissions.BasePermission):
     def has_permission(self, request, view):
-        print(request.user.id)
         if request.method in permissions.SAFE_METHODS:
             return True
         if request.user.is_authenticated:
@@ -15,3 +15,14 @@ class TestPermissionsChecker(permissions.BasePermission):
                 return True
         if request.method in ['DELETE', 'PATCH', 'PUT']:
             return obj.group_owner == request.user or request.user.is_staff
+
+
+class AddTestToGroupPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_authenticated or request.method in permissions.SAFE_METHODS:
+            return True
+
+    def has_object_permission(self, request, view, obj):
+        print(request.user, obj.group_owner.pk)
+        return request.user.is_staff or request.user.id == obj.group_owner.pk
+

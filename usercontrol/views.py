@@ -7,9 +7,10 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import *
 from rest_framework.response import Response
 
-from testcreater.models import Test
+from testcreater.models import Test, TestingGroup
+from testcreater.serializers import TestingGroupSerializer
 from testcreater.views import IsTestOwner
-from .permission_managers import GroupPermissionManager, UserPermissionManager
+from .permissions import GroupPermissionManager, UserPermissionManager
 from .serializers import *
 
 
@@ -25,10 +26,10 @@ class CreateUserAPIView(CreateAPIView):
     def post(self, request):
         if 'is_superuser' in request.data.keys():
             if request.data['is_superuser']:
-                raise ValidationError("Can't create superuser")
+                raise serializers.ValidationError("Can't create superuser")
         if 'is_staff' in request.data.keys():
             if request.data['is_staff']:
-                raise ValidationError("Can't create moderator")
+                raise serializers.ValidationError("Can't create moderator")
         request.data['is_active'] = 'True'
 
         return self.create(request)

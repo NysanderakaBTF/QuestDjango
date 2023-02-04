@@ -21,3 +21,8 @@ class TestAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('title',)
+
+@admin.register(TestingGroup)
+class TestingGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'group_owner', 'is_public')
+    list_editable = ('is_public',)

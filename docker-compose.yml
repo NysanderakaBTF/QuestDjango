@@ -12,6 +12,7 @@ services:
     depends_on:
       - db
   db:
+    container_name: pg_database
     image: postgres:13-alpine
     restart: always
     env_file:
