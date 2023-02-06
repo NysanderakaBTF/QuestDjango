@@ -1,5 +1,6 @@
 import rest_framework.exceptions
 from django.contrib.auth.models import PermissionsMixin
+from django.utils.dateparse import parse_duration
 from django.db.models import Q, QuerySet
 from django.http import HttpResponseRedirect
 from rest_framework import viewsets, views, permissions
@@ -36,56 +37,59 @@ class TestCreateAPIView(views.APIView):
     permission_classes = (TestPermissionsChecker,)
 
     def post(self, request):
-
-        # TODO: избавиться от создания объекта сразу, сделать сначала объект или словарь, а затем его сериалираьтором
-        # создать
-        # поебать, переадресацию на фронте сделать, с сообщением об ошибке, переадресация на Retrive (get + pk)
-        # print(request.data)
-        # Test update should be perfomed as creation of certain questions and addition of them to test
-
-        test = Test.objects.create(title=request.data['title'],
-                                   is_public=request.data['is_public'],
-                                   info=request.data['info'],
-                                   owner_id=request.user.id,
-                                   duration=request.data['duration'],
-                                   is_positional=request.data['is_positional'],
-                                   n_quest=request.data['n_quest']
-                                   )
-        if 'categories' in request.data.keys():
-            for i in request.data['categories']:
-                try:
-                    cat = Category.objects.get(title__iexact=i['title'])
-                except:
-                    cat = Category.objects.create(title=i['title'])
-                test.categories.add(cat)
-
-        questions_data = []
-        if 'questions' in request.data.keys():
-            for i in request.data['questions']:
-                if not 'answers' in i.keys():
-                    raise ValidationError(f"Question {i['text_ques']} must contain at least 1 answer")
-                i.setdefault('test', test.pk)
-
-                new_quesions = CreateQuestionSerializer(questions_data, many=True)
-                new_quesions.is_valid(raise_exception=True)
-                questions_data.append(new_quesions.instance)
-
-            Question.objects.bulk_create(questions_data)
-
-        if 'in_groups' in request.data.keys():
-            for i in request.data['in_groups']:
-                group = get_object_or_404(TestingGroup, pk=i)
-                if not (request.user.is_staff or request.user.id == group.group_owner.pk):
-                    raise rest_framework.exceptions.PermissionDenied(
-                        {"detail": f"You can't add a test to {group.name}, because you're not an owner",
-                         'test': TestSerializer(instance=test).data})
-                self.check_object_permissions(self.request, group)
-                group.group_tests.add(test)
-                group.save()
-
-        test.save()
-        # make redirect in front-end. After error - use Put method
-        return Response(TestSerializer(test).data)
+        #
+        # # TODO: избавиться от создания объекта сразу, сделать сначала объект или словарь, а затем его сериалираьтором
+        # # создать
+        # # поебать, переадресацию на фронте сделать, с сообщением об ошибке, переадресация на Retrive (get + pk)
+        # # print(request.data)
+        # # Test update should be perfomed as creation of certain questions and addition of them to test
+        #
+        # test = Test.objects.create(title=request.data['title'],
+        #                            is_public=request.data['is_public'],
+        #                            info=request.data['info'],
+        #                            owner_id=request.user.id,
+        #                            duration=parse_duration(request.data['duration']),
+        #                            is_positional=request.data['is_positional'],
+        #                            n_quest=request.data['n_quest']
+        #                            )
+        # if 'categories' in request.data.keys():
+        #     for i in request.data['categories']:
+        #         try:
+        #             cat = Category.objects.get(title__iexact=i['title'])
+        #         except:
+        #             cat = Category.objects.create(title=i['title'])
+        #         test.categories.add(cat)
+        #
+        # questions_data = []
+        # if 'questions' in request.data.keys():
+        #     for i in request.data['questions']:
+        #         if not 'answers' in i.keys():
+        #             raise ValidationError(f"Question {i['text_ques']} must contain at least 1 answer")
+        #         i.setdefault('test_id', test.pk)
+        #         # idk how to make it bulk
+        #         new_quesions = CreateQuestionSerializer(data=i)
+        #         new_quesions.is_valid(raise_exception=True)
+        #         # new_quesions.save()
+        #         questions_data.append(Question(**i))
+        #     Question.objects.bulk_create(questions_data)
+        #
+        # if 'in_groups' in request.data.keys():
+        #     for i in request.data['in_groups']:
+        #         group = get_object_or_404(TestingGroup, pk=i)
+        #         if not (request.user.is_staff or request.user.id == group.group_owner.pk):
+        #             raise rest_framework.exceptions.PermissionDenied(
+        #                 {"detail": f"You can't add a test to {group.name}, because you're not an owner",
+        #                  'test': TestSerializer(instance=test).data})
+        #         self.check_object_permissions(self.request, group)
+        #         group.group_tests.add(test)
+        #         group.save()
+        #
+        # test.save()
+        # # make redirect in front-end. After error - use Put method
+        serializer = CreateTestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class TestAPIView(views.APIView):

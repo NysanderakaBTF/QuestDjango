@@ -33,7 +33,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 class CreateQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ('text_ques', 'img_ques', 'is_sel_quest', 'test', 'score', 'position_in_test', 'answer_var_n')
+        fields = ('text_ques', 'img_ques', 'is_sel_quest', 'test_id', 'score', 'position_in_test', 'answer_var_n')
 
     def create(self, validated_data):
         self.is_valid(raise_exception=True)
@@ -45,12 +45,13 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
 
         data = validated_data
         data.setdefault('test_id', self.initial_data['test'])
+        data.setdefault('test', self.initial_data['test'])
 
         question = Question.objects.create(**data)
         answers = []
         for j in self.initial_data['answers']:
             new_data = j
-            new_data.setdefault('question', question.pk)
+            new_data.setdefault('question_id', question.pk)
             answers.append(QuestionAnswer(**new_data))
             # ans = QuestionAnswerSerializer(data=new_data)
             # ans.is_valid(raise_exception=True)
@@ -81,6 +82,14 @@ class TestSerializer(serializers.ModelSerializer):
         model = Test
         fields = '__all__'
 
+
+class CreateTestSerializer(serializers.ModelSerializer):
+    questions = CreateQuestionSerializer(many=True)
+    categories = CategorySerializer(many=True)
+    in_groups = TestingGroupSerializer(many=True)
+    class Meta:
+        model = Test
+        fields = '__all__'
 
 class TestUpdateSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(Category.objects.all(), many=True)

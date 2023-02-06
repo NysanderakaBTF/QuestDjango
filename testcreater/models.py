@@ -8,7 +8,7 @@ class QuestionAnswer(models.Model):
     explanation = models.TextField(blank=True)
     img_ans = models.ImageField(upload_to='img/%Y/%m/d/ans', blank=True, verbose_name='image', null=True)
     is_correct = models.BooleanField(default=False)
-    question = models.ForeignKey('Question', on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey('Question', on_delete=models.CASCADE, related_name='answers', blank=True)
 
     def __str__(self):
         return self.text_ans + str(self.is_correct)
@@ -18,7 +18,7 @@ class Question(models.Model):
     text_ques = models.TextField(verbose_name='Question')
     img_ques = models.ImageField(upload_to='img/%Y/%m/d/ques', blank=True, verbose_name='Image', null=True)
     is_sel_quest = models.BooleanField(default=True)
-    test = models.ForeignKey('Test', on_delete=models.CASCADE, related_name='questions')
+    test = models.ForeignKey('Test', on_delete=models.CASCADE, related_name='questions', blank=True)
 
     score = models.SmallIntegerField(default=1)
     position_in_test = models.IntegerField(default=-1)
