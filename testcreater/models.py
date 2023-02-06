@@ -42,7 +42,7 @@ class Test(models.Model):
     categories = models.ManyToManyField(Category, blank=True, db_index=True, related_name='category_tests')
     owner = models.ForeignKey(TestSubject, on_delete=models.SET_NULL, null=True)
 
-    n_quest = models.IntegerField(null=True)
+    n_quest = models.IntegerField()
     is_positional = models.BooleanField(default=False)
     duration = models.DurationField(default="01:00:00")
 

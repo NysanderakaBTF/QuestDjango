@@ -1,14 +1,17 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import SerializerMethodField
 from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import BaseSerializer
 
 from testcreater.models import *
 
+
 class TestingGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestingGroup
         fields = ('id', 'name', 'description', 'group_owner', 'group_members', 'group_tests', 'is_public')
+
 
 class QuestionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,35 +38,35 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ('text_ques', 'img_ques', 'is_sel_quest', 'test_id', 'score', 'position_in_test', 'answer_var_n')
 
-    def create(self, validated_data):
-        self.is_valid(raise_exception=True)
-        if 'img_ques' not in validated_data.keys():
-            validated_data.setdefault('img_ques', None)
-
-        if not 'answers' in self.initial_data.keys():
-            raise ValidationError(f"Question {validated_data['text_ques']} must contain at least 1 answer")
-
-        data = validated_data
-        data.setdefault('test_id', self.initial_data['test'])
-        data.setdefault('test', self.initial_data['test'])
-
-        question = Question.objects.create(**data)
-        answers = []
-        for j in self.initial_data['answers']:
-            new_data = j
-            new_data.setdefault('question_id', question.pk)
-            answers.append(QuestionAnswer(**new_data))
-            # ans = QuestionAnswerSerializer(data=new_data)
-            # ans.is_valid(raise_exception=True)
-            # answers.append(ans)
-
-        # answers_serializer = QuestionAnswerSerializer(data=answers, many=True)
-        # answers_serializer.is_valid(raise_exception=True)
-        # answers_serializer.save()
-        QuestionAnswer.objects.bulk_create(answers)
-        # QuestionAnswer.objects.bulk_create(answers)
-
-        return question
+    # def create(self, validated_data):
+    #     self.is_valid(raise_exception=True)
+    #     if 'img_ques' not in validated_data.keys():
+    #         validated_data.setdefault('img_ques', None)
+    #
+    #     if not 'answers' in self.initial_data.keys():
+    #         raise ValidationError(f"Question {validated_data['text_ques']} must contain at least 1 answer")
+    #
+    #     data = validated_data
+    #     data.setdefault('test_id', self.initial_data['test'])
+    #     data.setdefault('test', self.initial_data['test'])
+    #
+    #     question = Question.objects.create(**data)
+    #     answers = []
+    #     for j in self.initial_data['answers']:
+    #         new_data = j
+    #         new_data.setdefault('question_id', question.pk)
+    #         answers.append(QuestionAnswer(**new_data))
+    #         # ans = QuestionAnswerSerializer(data=new_data)
+    #         # ans.is_valid(raise_exception=True)
+    #         # answers.append(ans)
+    #
+    #     # answers_serializer = QuestionAnswerSerializer(data=answers, many=True)
+    #     # answers_serializer.is_valid(raise_exception=True)
+    #     # answers_serializer.save()
+    #     QuestionAnswer.objects.bulk_create(answers)
+    #     # QuestionAnswer.objects.bulk_create(answers)
+    #
+    #     return question
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -84,12 +87,15 @@ class TestSerializer(serializers.ModelSerializer):
 
 
 class CreateTestSerializer(serializers.ModelSerializer):
-    questions = CreateQuestionSerializer(many=True)
-    categories = CategorySerializer(many=True)
-    in_groups = TestingGroupSerializer(many=True)
+    # questions = CreateQuestionSerializer(many=True)
+    categories = SerializerMethodField("get_categrory_serializer")
+    in_groups = TestingGroup.objects.all()
     class Meta:
         model = Test
         fields = '__all__'
+
+    def get_categrory_serializer(self):
+
 
 class TestUpdateSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(Category.objects.all(), many=True)
@@ -139,6 +145,3 @@ class CategoryANDTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ('id', 'title', 'tests')
-
-
-

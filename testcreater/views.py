@@ -86,6 +86,7 @@ class TestCreateAPIView(views.APIView):
         #
         # test.save()
         # # make redirect in front-end. After error - use Put method
+        # serializer = CreateTestSerializer(data=request.data)
         serializer = CreateTestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
