@@ -11,6 +11,7 @@ services:
       - 8000:8000
     depends_on:
       - db
+      - mongodb
   db:
     container_name: pg_database
     image: postgres:13-alpine
@@ -33,7 +34,17 @@ services:
       - pgadmin-data:/var/lib/pgadmin
     depends_on:
       - db
+  mongodb:
+    image: mongo:6.0.4
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo:/var/lib/mongodb/data/db
+    env_file:
+      - ./.env
 
 volumes:
   postgres_data:
   pgadmin-data:
+  mongo:

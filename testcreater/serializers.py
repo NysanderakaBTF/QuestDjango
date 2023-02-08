@@ -88,13 +88,30 @@ class TestSerializer(serializers.ModelSerializer):
 
 class CreateTestSerializer(serializers.ModelSerializer):
     # questions = CreateQuestionSerializer(many=True)
-    categories = SerializerMethodField("get_categrory_serializer")
-    in_groups = TestingGroup.objects.all()
+    # categories = SerializerMethodField("get_categrory_serializer")
+    # in_groups = SerializerMethodField('get_in_groups')
+    # in_groups = TestingGroup.objects.all()
+    # categories = CategorySerializer(many=True)
+    # in_groups = TestingGroupSerializer(many=True)
     class Meta:
         model = Test
         fields = '__all__'
 
-    def get_categrory_serializer(self):
+    # def get_categrory_serializer(self, obj):
+    #     request = self.context.get('request')
+    #     print(request)
+    #     categories_ids = request.get('categories')
+    #     return Category.objects.filter(id__in=categories_ids)
+    #
+    # def get_in_groups(self):
+    #     request = self.context.get('request')
+    #     print(request)
+    #     in_groups = request.get('in_groups')
+    #     return Category.objects.filter(id__in=in_groups)
+
+
+
+
 
 
 class TestUpdateSerializer(serializers.ModelSerializer):

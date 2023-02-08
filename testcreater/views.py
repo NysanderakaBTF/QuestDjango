@@ -126,9 +126,6 @@ class TestUpdateAPIView(views.APIView):
 
         serialized_test = TestUpdateSerializer(data=request.data, instance=test_obj, partial=True)
         serialized_test.is_valid(raise_exception=True)
-        # test_obj.save()
-        # serialized_test = TestSerializer(data=request.data, instance=test_obj, partial=True)
-        # serialized_test.is_valid(raise_exception=True)
         serialized_test.save()
         return Response(serialized_test.data)
 
@@ -171,8 +168,6 @@ class QuestionAPIView(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
     queryset = Question.objects.all()
     permission_classes = (IsTestOwner,)
-
-    # TODO:короче, обновлять вопросы не через тест, а через апи ворпосов.!!!
 
     def retrieve(self, request, test_pk, pk):
         return Response(QuestionSerializer(Question.objects.get(id=pk)))

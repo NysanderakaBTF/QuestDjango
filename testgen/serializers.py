@@ -21,10 +21,3 @@ class GeneratedQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneratedQuestion
         fields = '__all__'
-
-
-class GeneratedQuestionSerializerNonAbstract(serializers.ModelSerializer):
-    class Meta:
-        model = GeneratedQuestionNonAbstract
-        fields = '__all__'
-

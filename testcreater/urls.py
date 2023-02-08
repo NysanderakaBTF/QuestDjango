@@ -13,7 +13,7 @@ urlpatterns = [
 
 
     path('<int:test_pk>/<int:pk>/', QuestionAPIView.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}), name='question_detail'),
-    path('<int:test_pk>/quesions', QuesionListAPIView.as_view()),
+    path('<int:test_pk>/quesions/', QuesionListAPIView.as_view()),
     path('<int:pk>/create_quesiton/', CreateQuestionAPIView.as_view()),
     # path('<int:test_pk>/<int:quest_pk>/new_ans/', ),
     # path('my/', MyTestListAPIView.as_view(), name='my_tests_list'),

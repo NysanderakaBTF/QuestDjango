@@ -1,36 +1,18 @@
-from django import forms
-from djongo import models
+from mongoengine import Document, EmbeddedDocument , fields
 
 
-class GeneratedQuestion(models.Model):
-    user_score = models.IntegerField(blank=True)
-    question_id = models.IntegerField()
-    answers = models.JSONField(default=list())
-    given_answer = models.JSONField(blank=True)
-
-    class Meta:
-        abstract = True
+class GeneratedQuestion(EmbeddedDocument):
+    user_score = fields.FloatField(default=0)
+    max_score = fields.FloatField(default=1)
+    question_id = fields.LongField()
+    answers = fields.ListField()
+    given_answer = fields.ListField()
 
 
-class GeneratedQuestionNonAbstract(models.Model):
-    user_score = models.IntegerField(blank=True)
-    question_id = models.IntegerField()
-    answers = models.JSONField(default=list())
-    given_answer = models.JSONField(blank=True)
-
-
-class GeneratedQuestionForm(forms.ModelForm):
-    class Meta:
-        model = GeneratedQuestion
-        fields = '__all__'
-
-
-class GeneratedTest(models.Model):
-    user_id = models.IntegerField(blank=True, db_index=True)
-    test_id = models.IntegerField(db_index=True)
-    _id = models.UUIDField()
-    questions = models.ArrayField(model_container=GeneratedQuestion,
-                                  model_form_class=GeneratedQuestionForm)
-    result = models.IntegerField(blank=True, null=True)
-    start_time = models.DateTimeField(blank=True)
-    end_time = models.DateTimeField(blank=True)
+class GeneratedTest(Document):
+    user_id = fields.LongField(db_index=True)
+    test_id = fields.LongField(db_index=True)
+    questions = fields.EmbeddedDocumentListField(GeneratedQuestion)
+    result = fields.IntField()
+    start_time = fields.DateTimeField()
+    end_time = fields.DateTimeField()
