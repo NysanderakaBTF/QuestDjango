@@ -82,8 +82,6 @@ WSGI_APPLICATION = 'quest.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASE_ROUTERS = ['quest.database_router.TestDBRouter', 'quest.database_router.GeneratorTestRouter']
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
