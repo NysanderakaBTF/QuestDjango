@@ -35,16 +35,12 @@ services:
     depends_on:
       - db
   mongodb:
-    container_name: mongo_db
-    command: mongod
     image: mongo:6.0.4
     restart: always
     ports:
       - 27017:27017
     volumes:
       - mongo:/var/lib/mongodb/data/db
-    env_file:
-      - ./.env
 
 volumes:
   postgres_data:
