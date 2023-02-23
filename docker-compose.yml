@@ -35,6 +35,8 @@ services:
     depends_on:
       - db
   mongodb:
+    container_name: mongo_db
+    command: mongod
     image: mongo:6.0.4
     restart: always
     ports:

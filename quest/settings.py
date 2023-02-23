@@ -13,7 +13,6 @@ import os.path
 from datetime import timedelta
 from pathlib import Path
 
-import mongoengine
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -183,7 +182,4 @@ SIMPLE_JWT = {
 }
 
 # mongodb
-mongoengine.connect(db=os.getenv('MONGODB_NAME'),
-                    host=os.getenv('MONGO_HOST'),
-                    port=int(os.getenv('MONGO_PORT'))
-                    )
+

@@ -1,4 +1,4 @@
-from mongoengine import Document, EmbeddedDocument , fields
+from mongoengine import Document, EmbeddedDocument, fields
 
 
 class GeneratedQuestion(EmbeddedDocument):
@@ -8,6 +8,9 @@ class GeneratedQuestion(EmbeddedDocument):
     answers = fields.ListField()
     given_answer = fields.ListField()
 
+    class Meta:
+        db_alias = 'gen_connect'
+
 
 class GeneratedTest(Document):
     user_id = fields.LongField(db_index=True)
@@ -16,3 +19,6 @@ class GeneratedTest(Document):
     result = fields.IntField()
     start_time = fields.DateTimeField()
     end_time = fields.DateTimeField()
+
+    class Meta:
+        db_alias = 'gen_connect'

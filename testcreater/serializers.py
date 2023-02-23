@@ -110,10 +110,6 @@ class CreateTestSerializer(serializers.ModelSerializer):
     #     return Category.objects.filter(id__in=in_groups)
 
 
-
-
-
-
 class TestUpdateSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(Category.objects.all(), many=True)
     questions = CreateQuestionSerializer(Question.objects.all(), many=True)
@@ -148,12 +144,11 @@ class TestUpdateSerializer(serializers.ModelSerializer):
 
 
 class TestListSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(Category.objects.all(), many=True)
-    in_groups = TestingGroupSerializer(TestingGroup.objects.all(), many=True)
+    categories = Category.objects.all()
 
     class Meta:
         model = Test
-        fields = ('pk', 'title', 'owner', 'in_groups', 'categories')
+        fields = '__all__'
 
 
 class CategoryANDTestSerializer(serializers.ModelSerializer):

@@ -29,7 +29,7 @@ class TestListAPIView(views.APIView):
                 Q(is_public=True) | Q(in_groups__group_members__in=[request.user.id]) | Q(
                     owner_id=request.user.id)).only('title', 'info', 'is_public', 'categories', 'owner').distinct()
         else:
-            available_tests = Test.objects.filter(is_public=True).values_list('id', 'title', 'owner')
+            available_tests = Test.objects.filter(is_public=True)
         return Response(TestSerializer(instance=available_tests, many=True).data)
 
 

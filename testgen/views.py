@@ -14,8 +14,14 @@ from rest_framework.permissions import IsAuthenticated
 
 from .permissions import ViewSolveTestPermisson
 from .models import *
+import os
+import mongoengine
 
+a = mongoengine.connect(db=os.getenv('MONGODB_NAME'),
+                    host=os.getenv('MONGO_HOST'),
+                    port=int(os.getenv('MONGO_PORT'))
 
+                    )
 class SolvedTestsListAPIView(ListAPIView):
     serializer_class = TestsListSerializer
     permission_classes = (IsAuthenticated,)
@@ -68,9 +74,10 @@ def generate_positional_questions(test_for: Test):
         temp.question_id = selected_q.pk
         test_q.remove(selected_q)
         answers = gen_ans_to_question(selected_q)
-        temp.answers = QuestionAnswerSerializer(answers, many=True)
+        # temp.answers = QuestionAnswerSerializer(answers, many=True)
+        temp.answers = list(answers)
         res.append(temp)
-    return res
+    return list(res)
 
 
 def check_question(user_ans, question: GeneratedQuestion):
@@ -98,11 +105,12 @@ class GenTestAPIView(APIView):
             all_q = generate_positional_questions(test_base)
         else:
             all_q = generate_random_questions(test_base)
-
+        print(isinstance(all_q, list))
+        print(all_q)
         g_test.questions = list(all_q)
         g_test.start_time = datetime.now()
         g_test.end_time = datetime.now() + test_base.duration
-        g_test.save()
+        g_test.save('gen_connect')
         return Response(g_test.to_json())
 
     def put(self, request, test_pk, res_id):
@@ -129,5 +137,6 @@ class GenTestAPIView(APIView):
             score += check_question(res, i)
         upd_res.end_time = datetime.strptime(request['end_time'], "%Y-%m-%d %H:%M:%S.%f")
         upd_res.result = score
+        upd_res.save('gen_connect')
 
         return Response(upd_res.to_json)

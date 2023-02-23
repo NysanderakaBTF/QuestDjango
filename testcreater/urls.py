@@ -9,7 +9,7 @@ urlpatterns = [
     path('<int:pk>/update/', TestUpdateAPIView.as_view(), name='update_test'),
     path('<int:pk>/delete/', TestAPIView.as_view(), name='delete_test'),
     path('<int:pk>/', TestAPIView.as_view(), name='test_detail'),
-    path('<int:pk>/start/', include('testgen.urls')),
+    path('start/', include('testgen.urls')),
 
 
     path('<int:test_pk>/<int:pk>/', QuestionAPIView.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}), name='question_detail'),
