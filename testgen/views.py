@@ -17,11 +17,7 @@ from .models import *
 import os
 import mongoengine
 
-a = mongoengine.connect(db=os.getenv('MONGODB_NAME'),
-                    host=os.getenv('MONGO_HOST'),
-                    port=int(os.getenv('MONGO_PORT'))
 
-                    )
 class SolvedTestsListAPIView(ListAPIView):
     serializer_class = TestsListSerializer
     permission_classes = (IsAuthenticated,)

@@ -183,3 +183,11 @@ SIMPLE_JWT = {
 
 # mongodb
 
+import mongoengine
+import os
+
+client = mongoengine.connect(db=os.getenv('MONGODB_NAME'),
+                             host=os.getenv('MONGO_HOST'),
+                             port=int(os.getenv('MONGO_PORT')))
+print("client:", client)
+
